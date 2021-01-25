@@ -9,8 +9,9 @@ from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 
 from .permissions import IsProductOwner
-from .models import Product, Category, ProductImage
-from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer
+from .models import Product, Category, ProductImage, Review, Order
+from .serializers import ProductSerializer, CategorySerializer, ProductImageSerializer, ReviewSerializer, \
+    OrderSerializer
 
 
 class CategoryListView(generics.ListAPIView):
@@ -58,3 +59,28 @@ class ProductImageView(generics.ListCreateAPIView):
 
     def get_serializer_context(self):
         return {'request': self.request}
+
+#review
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated, ]
+    queryset = Review.objects.all()
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve', 'create']:
+            permissions = []
+        else:
+            permissions = [IsProductOwner, ]
+        return [permission() for permission in permissions]
+
+#order
+class OrderViewSet(viewsets.ModelViewSet):
+    queryset = Order.objects.all()
+    serializer_class = OrderSerializer
+    permission_classes = [IsAuthenticated, ]
+
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
